@@ -7,22 +7,27 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
 using Cars.Service.Data;
 using Cars.Service.Models;
+using Project.Service.Services;
+using Project.Service.Interfaces;
 
 namespace VehicleProjectDva.Controllers
 {
     public class VehicleMakesController : Controller
     {
-        private readonly VehicleDBContext _context;
 
-        public VehicleMakesController(VehicleDBContext context)
+        public VehicleMakesController(IVehicleMakeService vehicleMakeService)
         {
-            _context = context;
+            VehicleMakeService = vehicleMakeService;
         }
+
+       public IVehicleMakeService VehicleMakeService { get; set; }
 
         // GET: VehicleMakes
         public async Task<IActionResult> Index()
         {
-            return View(await _context.VehicleMakes.ToListAsync());
+            var foundVehicleMakes = await VehicleMakeService.FindAllVehicleMakesAsync();
+           return View(foundVehicleMakes);
+
         }
 
         // GET: VehicleMakes/Details/5
@@ -33,8 +38,7 @@ namespace VehicleProjectDva.Controllers
                 return NotFound();
             }
 
-            var vehicleMake = await _context.VehicleMakes
-                .FirstOrDefaultAsync(m => m.Id == id);
+            var vehicleMake = await VehicleMakeService.GetVehicleMakeAsync(id.Value);
             if (vehicleMake == null)
             {
                 return NotFound();
@@ -58,9 +62,12 @@ namespace VehicleProjectDva.Controllers
         {
             if (ModelState.IsValid)
             {
-                _context.Add(vehicleMake);
-                await _context.SaveChangesAsync();
-                return RedirectToAction(nameof(Index));
+                var createdVehicleMake = await VehicleMakeService.CreateVehicleMakeAsync(vehicleMake);
+                if(createdVehicleMake > 0)
+                {
+                    return RedirectToAction(nameof(Index));
+                }
+                return View(vehicleMake);
             }
             return View(vehicleMake);
         }
@@ -68,12 +75,12 @@ namespace VehicleProjectDva.Controllers
         // GET: VehicleMakes/Edit/5
         public async Task<IActionResult> Edit(int? id)
         {
-            if (id == null)
+            if (!id.HasValue)
             {
                 return NotFound();
             }
 
-            var vehicleMake = await _context.VehicleMakes.FindAsync(id);
+            var vehicleMake = await VehicleMakeService.GetVehicleMakeAsync(id.Value);
             if (vehicleMake == null)
             {
                 return NotFound();
@@ -97,8 +104,7 @@ namespace VehicleProjectDva.Controllers
             {
                 try
                 {
-                    _context.Update(vehicleMake);
-                    await _context.SaveChangesAsync();
+                    await VehicleMakeService.UpdateVehicleMakeAsync(vehicleMake);
                 }
                 catch (DbUpdateConcurrencyException)
                 {
@@ -117,21 +123,15 @@ namespace VehicleProjectDva.Controllers
         }
 
         // GET: VehicleMakes/Delete/5
-        public async Task<IActionResult> Delete(int? id)
+        public async Task<IActionResult> Delete(int id)
         {
-            if (id == null)
+            var foundVehicleMakes = await VehicleMakeService.GetVehicleMakeAsync(id);
+            if (foundVehicleMakes == null)
             {
                 return NotFound();
             }
 
-            var vehicleMake = await _context.VehicleMakes
-                .FirstOrDefaultAsync(m => m.Id == id);
-            if (vehicleMake == null)
-            {
-                return NotFound();
-            }
-
-            return View(vehicleMake);
+            return View(foundVehicleMakes);
         }
 
         // POST: VehicleMakes/Delete/5
@@ -139,15 +139,20 @@ namespace VehicleProjectDva.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            var vehicleMake = await _context.VehicleMakes.FindAsync(id);
-            _context.VehicleMakes.Remove(vehicleMake);
-            await _context.SaveChangesAsync();
+            
+            
+            var deletedVehicleMakes = await VehicleMakeService.DeleteVehicleMakeAsync(id);
+            if (deletedVehicleMakes == 0)
+            {
+                return NotFound();
+            }
+
             return RedirectToAction(nameof(Index));
         }
 
         private bool VehicleMakeExists(int id)
         {
-            return _context.VehicleMakes.Any(e => e.Id == id);
+            return VehicleMakeService.CheckIfExistsAsync(id);
         }
     }
 }

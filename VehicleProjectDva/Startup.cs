@@ -12,6 +12,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Project.Service.Interfaces;
+using Project.Service.Services;
 
 namespace VehicleProjectDva
 {
@@ -33,6 +35,8 @@ namespace VehicleProjectDva
               Configuration.GetConnectionString("DefaultConnection"), b => b.MigrationsAssembly("VehicleProjectDva")));
             services.AddTransient<IVehicleModel, VehicleModel>();
             services.AddTransient<IVehicleMake, VehicleMake>();
+            services.AddTransient<IVehicleMakeService, VehicleMakeService>();
+            services.AddAutoMapper(typeof(Startup));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
